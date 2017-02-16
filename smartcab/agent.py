@@ -23,6 +23,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
+        self.trial = 0
 
 
     def reset(self, destination=None, testing=False):
@@ -33,6 +34,8 @@ class LearningAgent(Agent):
         # Select the destination as the new location to route to
         self.planner.route_to(destination)
         
+        self.trial = self.trial + 1
+
         ########### 
         ## TO DO ##
         ###########
@@ -43,7 +46,9 @@ class LearningAgent(Agent):
             self.epsilon = 0.0
             self.alpha = 0.0
         else:
-            self.epsilon = self.epsilon - 0.05
+            #self.epsilon = float(1)/float(self.total_trials * self.total_trials)
+            self.epsilon = float(1)/float(self.trial * self.trial)
+            #self.epsilon = self.epsilon - 0.05
 
         return self.epsilon
 
