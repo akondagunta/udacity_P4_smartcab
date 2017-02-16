@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.1):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -39,8 +39,15 @@ class LearningAgent(Agent):
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
+        if testing == True:
+            self.epsilon = 0.0
+            self.alpha = 0.0
+        else:
+            self.epsilon = self.epsilon - 0.05
 
-        return None
+        return self.epsilon
+
+        #return None
 
     def build_state(self):
         """ The build_state function is called when the agent requests data from the 
@@ -56,7 +63,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
-        state = None
+        state = (waypoint, inputs)
 
         return state
 
@@ -70,7 +77,12 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = None
+        maxQ = 0.0
+        
+        for action in self.valid_actions:
+            actionvalue = self.Q[state][action]
+            if actionvalue > maxQ:
+                maxQ = actionvalue
 
         return maxQ 
 
@@ -84,7 +96,8 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
-
+        if self.learning == True and state not in self.Q:
+            self.Q[state] = {None: 0.0, 'forward': 0.0, 'left':0.0, 'right':0.0}
         return
 
 
@@ -97,13 +110,21 @@ class LearningAgent(Agent):
         self.next_waypoint = self.planner.next_waypoint()
         action = random.choice(self.valid_actions)
 
-        ########### 
+        ###########
         ## TO DO ##
         ###########
         # When not learning, choose a random action
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
- 
+        if self.learning == True:
+            rand = randint(0,99)
+            if(rand > (self.epsilon*100)):
+                # get highest value
+                highest = max(self.Q[state].values())
+                # get all keys with the highest value
+                highestKeys = [key for key,value in self.Q[state].items() if value == highest]
+                # set action to a random key from the set of all keys with the highest value
+                action = random.choice(highestKeys)
         return action
 
 
@@ -117,6 +138,10 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
+        if self.learning == True:
+            new_value = (self.alpha)*(reward)
+            old_value = self.Q[self.prev_state][action]
+            self.Q[self.prev_state][action] = (1 - self.alpha)*old_value + new_value
 
         return
 
