@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.9):
+    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -31,8 +31,6 @@ class LearningAgent(Agent):
             'testing' is set to True if testing trials are being used
             once training trials have completed. """
 
-        print self.Q
-
         # Select the destination as the new location to route to
         self.planner.route_to(destination)
         
@@ -50,11 +48,13 @@ class LearningAgent(Agent):
         else:
             #self.epsilon = float(1)/float(self.total_trials * self.total_trials)
             #self.epsilon = float(1)/float(self.trial * self.trial)
-            self.epsilon = self.epsilon - 0.01
+            a = 0.9
+            self.epsilon = float(pow(a,self.trial))            
+            #self.epsilon = self.epsilon - 0.001
 
-        return self.epsilon
+        #return self.epsilon
 
-        #return None
+        return None
 
     def build_state(self):
         """ The build_state function is called when the agent requests data from the 
@@ -103,8 +103,7 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
-        self.Q[state] = {}
-        if self.learning == True:
+        if self.learning == True and state not in self.Q:
             self.Q[state] = {None: 0.0, 'forward': 0.0, 'left':0.0, 'right':0.0}
         return
 
@@ -148,8 +147,8 @@ class LearningAgent(Agent):
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
         if self.learning == True:
             new_value = (self.alpha)*(reward)
-            old_value = self.Q[self.state][action]
-            self.Q[self.state][action] = (1 - self.alpha)*old_value + new_value
+            old_value = self.Q[state][action]
+            self.Q[state][action] = (1 - self.alpha)*old_value + new_value
 
         return
 
@@ -186,13 +185,13 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, learning=True)
+    agent = env.create_agent(LearningAgent, learning=True, alpha=0.3)
     
     ##############
     # Follow the driving agent
     # Flags:
     #   enforce_deadline - set to True to enforce a deadline metric
-    env.set_primary_agent(agent, enforce_deadline=False)
+    env.set_primary_agent(agent, enforce_deadline=True)
 
     ##############
     # Create the simulation
@@ -201,14 +200,15 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, update_delay=0.01, log_metrics=True, optimized=False)
+    sim = Simulator(env, update_delay=0.01, display=False, log_metrics=True, optimized=False)
     
     ##############
     # Run the simulator
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test=100)
+    sim.run(n_test=10, tolerance=0.001)
+    print agent.Q
 
 
 if __name__ == '__main__':
